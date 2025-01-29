@@ -11,9 +11,7 @@ import {
 } from "react-native";
 
 import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
 import { useState } from "react";
-import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ScrollView } from "react-native-gesture-handler";
 
 export default function MainView() {
