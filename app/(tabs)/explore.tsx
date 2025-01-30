@@ -16,7 +16,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useState } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { ScrollView } from "react-native-gesture-handler";
+import { DefaultTheme } from "@react-navigation/native";
 
 export default function MainView() {
   const [displayPlayer, setDisplayPlayer] = useState(["", "", "", ""]);
@@ -37,18 +37,18 @@ export default function MainView() {
     setModalVisible(false);
   };
   return (
-    <SafeAreaView style={{height: '100%'}}>
+    <SafeAreaView style={{backgroundColor: modalVisible? 'rgba(190,91,91,0.3)': DefaultTheme.colors.background, flex: 1}}>
       <SafeAreaView
         style={{
-          height: "100%",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
+          height: '100%',
         }}
       >
         <SafeAreaView style={styles.viewName}>
           <ThemedView style={styles.titleContainer}>
-            <ThemedText style={styles.textStyle} type="title">
+            <ThemedText style={{...styles.textStyle, color: 'rgb(234, 55, 55)'}} type="title">
               Select Player
             </ThemedText>
           </ThemedView>
@@ -94,21 +94,25 @@ export default function MainView() {
               </SafeAreaView>
             </SafeAreaProvider>
           </Modal>
-          <Pressable style={[styles.button, styles.buttonOpen]}>
+          
+        </SafeAreaView>
+        <Pressable style={[styles.button, styles.buttonOpen, styles.buttonStart]}>
             <ThemedText style={styles.textStyle}>Start</ThemedText>
           </Pressable>
-        </SafeAreaView>
       </SafeAreaView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  area: {
+
+  },
   viewName: {
     display: 'flex',
     justifyContent: "center",
     alignItems: "center",
-    height: "100%",
+    margin: 60,
   },
   headerImage: {
     color: "#808080",
@@ -117,8 +121,10 @@ const styles = StyleSheet.create({
     position: "absolute",
   },
   titleContainer: {
+    backgroundColor: 'transparent',
     flexDirection: "row",
     gap: 8,
+    marginVertical: 20,
   },
   button: {
     borderRadius: 20,
@@ -126,6 +132,13 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   buttonOpen: {
+    minWidth: 200,
+    marginVertical: 10,
+    backgroundColor: "#F194FF",
+  },
+  buttonStart: {
+    width: '80%',
+    marginVertical: 10,
     backgroundColor: "#F194FF",
   },
   textStyle: {
