@@ -2,26 +2,10 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert, TextInput } from 'react-native';
 import { Plus, Edit2, Save, Trash2, Eye, EyeOff, Trophy } from 'lucide-react-native';
 import NewRoundModal from './NewRoundModal';
+import { useGame } from '../context/GameContext';
 
-interface GameScreenProps {
-    players: { name: string; avatar: string }[];
-    rounds: { id: number; scores: number[] }[];
-    setRounds: (rounds: { id: number; scores: number[] }[]) => void;
-    gameEnded: boolean;
-    setGameEnded: (ended: boolean) => void;
-    onNewGame: () => void;
-    setPlayers: (players: { name: string; avatar: string }[]) => void;
-}
-
-const GameScreen: React.FC<GameScreenProps> = ({
-    players,
-    rounds,
-    setRounds,
-    gameEnded,
-    setGameEnded,
-    onNewGame,
-    setPlayers,
-}) => {
+const GameScreen: React.FC = () => {
+    const { players, setPlayers, rounds, setRounds, gameEnded, setGameEnded, resetGame } = useGame();
     const [showNewRound, setShowNewRound] = useState(false);
     const [showScores, setShowScores] = useState(false);
     const [editingPlayer, setEditingPlayer] = useState<number | null>(null);
@@ -80,6 +64,17 @@ const GameScreen: React.FC<GameScreenProps> = ({
         }
         setGameEnded(true);
         setShowScores(true);
+    };
+
+    const handleNewGame = () => {
+        Alert.alert(
+            "Dữ liệu sẽ bị xóa",
+            "Bạn có chắc muốn chơi lại từ đầu?",
+            [
+                { text: "Hủy", style: "cancel" },
+                { text: "Đồng ý", onPress: resetGame }
+            ]
+        );
     };
 
     return (
@@ -158,7 +153,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
                         </>
                     ) : (
                         <TouchableOpacity
-                            onPress={onNewGame}
+                            onPress={handleNewGame}
                             style={styles.newGameButton}
                         >
                             <Text style={styles.buttonText}>Ván mới</Text>

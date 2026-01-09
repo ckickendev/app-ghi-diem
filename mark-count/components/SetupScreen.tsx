@@ -1,15 +1,14 @@
-import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
-
-const avatarColors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A'];
+import React, { useContext } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { useGame } from '../context/GameContext';
 
 interface SetupScreenProps {
-    players: { name: string; avatar: string }[];
-    setPlayers: (players: { name: string; avatar: string }[]) => void;
     onStart: () => void;
 }
 
-const SetupScreen: React.FC<SetupScreenProps> = ({ players, setPlayers, onStart }) => {
+const SetupScreen: React.FC<SetupScreenProps> = ({ onStart }) => {
+    const { players, setPlayers } = useGame();
+
     return (
         <View style={styles.container}>
             <View style={styles.content}>
@@ -43,7 +42,14 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ players, setPlayers, onStart 
                     </View>
 
                     <TouchableOpacity
-                        onPress={onStart}
+                        onPress={() => {
+                            const validPlayers = players.filter(p => p.name.trim());
+                            if (validPlayers.length < 2) {
+                                alert('Cần ít nhất 2 người chơi');
+                                return;
+                            }
+                            onStart();
+                        }}
                         style={styles.button}
                     >
                         <Text style={styles.buttonText}>Bắt đầu</Text>
