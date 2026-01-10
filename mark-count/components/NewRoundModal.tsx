@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, ScrollView, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, ScrollView, Alert, Platform } from 'react-native';
 import { Trash2 } from 'lucide-react-native';
 
 interface NewRoundModalProps {
@@ -10,23 +10,45 @@ interface NewRoundModalProps {
 }
 
 const NewRoundModal: React.FC<NewRoundModalProps> = ({ visible, onClose, players, onSave }) => {
-    const [newRoundScores, setNewRoundScores] = useState<number[]>([0, 0, 0, 0]);
+    // Keep inputs as strings to allow typing "-" or empty state
+    const [newRoundScores, setNewRoundScores] = useState<string[]>([]);
+
+    useEffect(() => {
+        if (visible) {
+            setNewRoundScores(new Array(players.length).fill(''));
+        }
+    }, [visible, players.length]);
 
     const handleScoreChange = (idx: number, value: string) => {
         const newScores = [...newRoundScores];
-        newScores[idx] = parseInt(value) || 0;
-        setNewRoundScores(newScores);
+        // Regex to allow digits and a single minus sign at the start
+        if (/^-?\d*$/.test(value)) {
+            newScores[idx] = value;
+            setNewRoundScores(newScores);
+        }
     };
 
-    const currentSum = newRoundScores.reduce((a, b) => a + b, 0);
+    // Calculate sum for validation
+    const currentSum = newRoundScores.reduce((a, b) => {
+        // Convert to number, treat empty or just "-" as 0 for sum calculation
+        const val = parseInt(b);
+        return a + (isNaN(val) ? 0 : val);
+    }, 0);
 
     const handleAddRound = () => {
-        if (Math.abs(currentSum) > 0.01) {
+        if (Math.abs(currentSum) !== 0) {
             Alert.alert('Lỗi', 'Tổng điểm phải bằng 0! Hiện tại: ' + currentSum);
             return;
         }
-        onSave([...newRoundScores]);
-        setNewRoundScores([0, 0, 0, 0]);
+
+        // Convert strings to numbers for saving
+        const finalScores = newRoundScores.map(s => {
+            const val = parseInt(s);
+            return isNaN(val) ? 0 : val;
+        });
+
+        onSave(finalScores);
+        setNewRoundScores(new Array(players.length).fill(''));
     };
 
     return (
@@ -42,7 +64,7 @@ const NewRoundModal: React.FC<NewRoundModalProps> = ({ visible, onClose, players
                         <Text style={styles.modalTitle}>Nhập điểm</Text>
                         <TouchableOpacity
                             onPress={() => {
-                                setNewRoundScores([0, 0, 0, 0]);
+                                setNewRoundScores(new Array(players.length).fill(''));
                                 onClose();
                             }}
                             style={styles.closeButton}
@@ -56,22 +78,26 @@ const NewRoundModal: React.FC<NewRoundModalProps> = ({ visible, onClose, players
                             {players.map((player, idx) => {
                                 if (!player.name) return null;
                                 return (
-                                    <View key={idx} style={styles.playerRow}>
-                                        <View style={[styles.avatar, { backgroundColor: player.avatar }]}>
-                                            <Text style={styles.avatarText}>
-                                                {player.name[0].toUpperCase()}
-                                            </Text>
-                                        </View>
-                                        <View style={styles.inputContainer}>
+                                    <View key={idx} style={styles.playerInputRow}>
+                                        <View style={styles.playerInfo}>
+                                            <View style={[styles.avatar, { backgroundColor: player.avatar }]}>
+                                                <Text style={styles.avatarText}>
+                                                    {player.name[0].toUpperCase()}
+                                                </Text>
+                                            </View>
                                             <Text style={styles.playerName}>{player.name}</Text>
-                                            <TextInput
-                                                style={styles.input}
-                                                keyboardType="numeric"
-                                                value={newRoundScores[idx].toString()}
-                                                onChangeText={(text) => handleScoreChange(idx, text)}
-                                                placeholder="0"
-                                            />
                                         </View>
+
+                                        <TextInput
+                                            style={styles.input}
+                                            // 'numeric' doesn't always show minus on iOS. 
+                                            // 'numbers-and-punctuation' is better for negative numbers.
+                                            keyboardType="numbers-and-punctuation"
+                                            value={newRoundScores[idx]}
+                                            onChangeText={(text) => handleScoreChange(idx, text)}
+                                            placeholder="0"
+                                            placeholderTextColor="#9ca3af"
+                                        />
                                     </View>
                                 );
                             })}
@@ -79,23 +105,23 @@ const NewRoundModal: React.FC<NewRoundModalProps> = ({ visible, onClose, players
 
                         <View style={[
                             styles.sumContainer,
-                            Math.abs(currentSum) < 0.01 ? styles.sumValid : styles.sumInvalid
+                            currentSum === 0 ? styles.sumValid : styles.sumInvalid
                         ]}>
                             <Text style={[
                                 styles.sumText,
-                                Math.abs(currentSum) < 0.01 ? styles.sumTextValid : styles.sumTextInvalid
+                                currentSum === 0 ? styles.sumTextValid : styles.sumTextInvalid
                             ]}>
                                 Tổng: {currentSum >= 0 ? '+' : ''}{currentSum}
-                                {Math.abs(currentSum) < 0.01 ? ' ✓' : ' ⚠️'}
+                                {currentSum === 0 ? ' ✓' : ' ⚠️'}
                             </Text>
                         </View>
 
                         <TouchableOpacity
                             onPress={handleAddRound}
-                            disabled={Math.abs(currentSum) > 0.01}
+                            disabled={currentSum !== 0}
                             style={[
                                 styles.saveButton,
-                                Math.abs(currentSum) > 0.01 && styles.saveButtonDisabled
+                                currentSum !== 0 && styles.saveButtonDisabled
                             ]}
                         >
                             <Text style={styles.saveButtonText}>Lưu ván</Text>
@@ -149,41 +175,52 @@ const styles = StyleSheet.create({
         marginBottom: 24,
         gap: 16,
     },
-    playerRow: {
+    playerInputRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 12,
+        backgroundColor: '#f9fafb',
+        padding: 8,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#f3f4f6',
+    },
+    playerInfo: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 12,
+        flex: 1,
     },
     avatar: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         alignItems: 'center',
         justifyContent: 'center',
     },
     avatarText: {
         color: 'white',
         fontWeight: 'bold',
-    },
-    inputContainer: {
-        flex: 1,
+        fontSize: 16,
     },
     playerName: {
-        fontSize: 14,
-        fontWeight: '500',
+        fontSize: 16,
+        fontWeight: '600',
         color: '#374151',
-        marginBottom: 4,
     },
     input: {
-        width: '100%',
-        height: 45,
-        borderWidth: 2,
+        width: 100,
+        height: 50,
+        backgroundColor: 'white',
+        borderWidth: 1,
         borderColor: '#d1d5db',
         borderRadius: 8,
         paddingHorizontal: 12,
-        fontSize: 18,
-        fontWeight: '600',
+        fontSize: 20,
+        fontWeight: 'bold',
         textAlign: 'center',
+        color: '#1f2937',
     },
     sumContainer: {
         padding: 16,
@@ -210,7 +247,7 @@ const styles = StyleSheet.create({
     saveButton: {
         backgroundColor: '#16a34a',
         paddingVertical: 16,
-        borderRadius: 8,
+        borderRadius: 12,
         alignItems: 'center',
     },
     saveButtonDisabled: {

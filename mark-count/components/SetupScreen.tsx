@@ -1,24 +1,52 @@
 import React, { useContext } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { useGame } from '../context/GameContext';
+
+import { Minus, Plus } from 'lucide-react-native';
 
 interface SetupScreenProps {
     onStart: () => void;
 }
 
 const SetupScreen: React.FC<SetupScreenProps> = ({ onStart }) => {
-    const { players, setPlayers } = useGame();
+    const { players, setPlayers, updatePlayerCount } = useGame();
 
     return (
-        <View style={styles.container}>
-            <View style={styles.content}>
-                <View style={styles.header}>
-                    <Text style={styles.icon}>🃏</Text>
-                    <Text style={styles.title}>Tiến Lên</Text>
-                    <Text style={styles.subtitle}>Nhập tên người chơi</Text>
-                </View>
-
+        <KeyboardAvoidingView
+            style={styles.container}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        >
+            <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+            >
                 <View style={styles.card}>
+                    <View style={styles.header}>
+                        <Text style={styles.title}>Thiết lập game</Text>
+                        <Text style={styles.subtitle}>Số lượng người chơi: {players.length}</Text>
+
+                        <View style={styles.countControl}>
+                            <TouchableOpacity
+                                onPress={() => updatePlayerCount(players.length - 1)}
+                                disabled={players.length <= 2}
+                                style={[styles.countButton, players.length <= 2 && styles.countButtonDisabled]}
+                            >
+                                <Minus size={24} color={players.length <= 2 ? '#9ca3af' : 'white'} />
+                            </TouchableOpacity>
+
+                            <Text style={styles.countText}>{players.length}</Text>
+
+                            <TouchableOpacity
+                                onPress={() => updatePlayerCount(players.length + 1)}
+                                disabled={players.length >= 8}
+                                style={[styles.countButton, players.length >= 8 && styles.countButtonDisabled]}
+                            >
+                                <Plus size={24} color={players.length >= 8 ? '#9ca3af' : 'white'} />
+                            </TouchableOpacity>
+                        </View>
+                    </View>
                     <View style={styles.playersList}>
                         {players.map((player, idx) => (
                             <View key={idx} style={styles.playerRow}>
@@ -55,8 +83,8 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ onStart }) => {
                         <Text style={styles.buttonText}>Bắt đầu</Text>
                     </TouchableOpacity>
                 </View>
-            </View>
-        </View>
+            </ScrollView>
+        </KeyboardAvoidingView>
     );
 };
 
@@ -64,14 +92,14 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#166534', // Green-800 equivalent
+    },
+    scrollContent: {
+        flexGrow: 1,
         justifyContent: 'center',
         padding: 24,
     },
-    content: {
-        alignItems: 'center',
-    },
     header: {
-        alignItems: 'center',
+        alignItems: 'flex-start',
         marginBottom: 32,
     },
     icon: {
@@ -85,12 +113,11 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     subtitle: {
-        color: '#dcfce7', // Green-100
+        color: '#1c5b32ff',
         fontSize: 16,
     },
     card: {
         width: '100%',
-        maxWidth: 400,
         backgroundColor: 'white',
         borderRadius: 24,
         padding: 24,
@@ -150,6 +177,33 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 18,
         fontWeight: 'bold',
+    },
+    countControl: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 16,
+        marginTop: 16,
+        backgroundColor: '#f3f4f6',
+        padding: 8,
+        borderRadius: 16,
+    },
+    countButton: {
+        backgroundColor: '#16a34a',
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    countButtonDisabled: {
+        backgroundColor: '#e5e7eb',
+    },
+    countText: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#1f2937',
+        width: 32,
+        textAlign: 'center',
     },
 });
 

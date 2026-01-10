@@ -5,17 +5,19 @@ import NewRoundModal from './NewRoundModal';
 import { useGame } from '../context/GameContext';
 
 const GameScreen: React.FC = () => {
-    const { players, setPlayers, rounds, setRounds, gameEnded, setGameEnded, resetGame } = useGame();
+    const { players, setPlayers, rounds, setRounds, gameEnded, setGameEnded, resetGame, saveCurrentGame } = useGame();
     const [showNewRound, setShowNewRound] = useState(false);
     const [showScores, setShowScores] = useState(false);
     const [editingPlayer, setEditingPlayer] = useState<number | null>(null);
     const [tempName, setTempName] = useState('');
 
     const getTotalScores = () => {
-        const totals = [0, 0, 0, 0];
+        const totals = new Array(players.length).fill(0);
         rounds.forEach((round) => {
             round.scores.forEach((score, idx) => {
-                totals[idx] += score;
+                if (idx < totals.length) {
+                    totals[idx] += score;
+                }
             });
         });
         return totals;
@@ -67,14 +69,20 @@ const GameScreen: React.FC = () => {
     };
 
     const handleNewGame = () => {
-        Alert.alert(
-            "Dữ liệu sẽ bị xóa",
-            "Bạn có chắc muốn chơi lại từ đầu?",
-            [
-                { text: "Hủy", style: "cancel" },
-                { text: "Đồng ý", onPress: resetGame }
-            ]
-        );
+        // Alert.alert(
+        //     "Dữ liệu sẽ được xoá để qua ván mới",
+        //     "Bạn có chắc muốn chơi lại từ đầu?",
+        //     [
+        //         { text: "Hủy", style: "cancel" },
+        //         {
+        //             text: "Đồng ý",
+        //             onPress: () => {
+        saveCurrentGame();
+        resetGame();
+        //             }
+        //         }
+        //     ]
+        // );
     };
 
     return (
@@ -211,7 +219,6 @@ const GameScreen: React.FC = () => {
                                         if (!players[idx].name) return null;
                                         return (
                                             <View key={idx} style={styles.scoreCell}>
-                                                <Text style={styles.scoreCellName} numberOfLines={1}>{players[idx].name}</Text>
                                                 <Text style={[
                                                     styles.scoreValue,
                                                     score >= 0 ? styles.positiveScore : styles.negativeScore
@@ -269,7 +276,7 @@ const styles = StyleSheet.create({
     playerColumn: {
         flex: 1,
         alignItems: 'center',
-        maxWidth: '25%',
+        // maxWidth: '25%', // Removed to support dynamic player count
     },
     playerAvatar: {
         width: 56,

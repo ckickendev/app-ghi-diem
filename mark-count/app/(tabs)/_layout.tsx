@@ -7,7 +7,7 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="history"
                 options={{
-                    title: 'History',
+                    title: 'Lịch Sử',
                     tabBarIcon: ({ color }) => <History size={24} color={color} />,
                     headerShown: false,
                 }}
@@ -15,7 +15,7 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="setting"
                 options={{
-                    title: 'Setting',
+                    title: 'Cài Đặt',
                     tabBarIcon: ({ color }) => <Settings size={24} color={color} />,
                     headerShown: false,
                 }}

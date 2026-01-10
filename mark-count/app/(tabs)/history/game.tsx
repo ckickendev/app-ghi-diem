@@ -6,7 +6,7 @@ import GameScreen from '@/components/GameScreen';
 export default function GameTab() {
     return (
         <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="dark-content" />
+            <StatusBar barStyle="light-content" />
             <GameScreen />
         </SafeAreaView>
     );
@@ -15,6 +15,6 @@ export default function GameTab() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f9fafb',
+        backgroundColor: '#166534',
     },
 });
