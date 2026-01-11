@@ -7,54 +7,89 @@ import { Trophy } from 'lucide-react-native';
 
 export default function HistoryIndex() {
     const router = useRouter();
-    const { history } = useGame();
+    const { history, players, rounds, gameEnded } = useGame();
     const [isToday, setIsToday] = React.useState(true);
 
+    const getDisplayData = () => {
+        let data = [...history];
+
+        // Add current game if it has rounds and hasn't ended
+        if (rounds.length > 0 && !gameEnded) {
+            const currentSession: GameSession = {
+                id: -1, // Special ID for active game
+                date: new Date().toISOString(),
+                players: players,
+                rounds: rounds
+            };
+            data.unshift(currentSession);
+        }
+
+        // Sort by date desc
+        return data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    };
+
     const renderItem = ({ item }: { item: GameSession }) => {
+        const isCurrentGame = item.id === -1;
+
         // Calculate winner & total scores for summary
         const totals = item.players.map((_, pIdx) =>
             item.rounds.reduce((sum, r) => sum + r.scores[pIdx], 0)
         );
 
-        // Find winner (max score)
+        // Find winner/leader (max score)
         const maxScore = Math.max(...totals);
         const winnerIdx = totals.indexOf(maxScore);
         const winner = item.players[winnerIdx];
 
+        const handlePress = () => {
+            if (isCurrentGame) {
+                router.push('/(tabs)/history/game');
+            } else {
+                // Future: Show details for finished games
+            }
+        };
+
         return (
-            <View style={styles.historyCard}>
-                <View style={styles.cardHeader}>
-                    <Text style={styles.dateText}>
-                        {new Date(item.date).toLocaleDateString('vi-VN', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            day: 'numeric',
-                            month: 'numeric',
-                            year: 'numeric'
-                        })}
-                    </Text>
-                    <View style={styles.badge}>
-                        <Text style={styles.badgeText}>{item.rounds.length} ván</Text>
+            <TouchableOpacity onPress={handlePress} activeOpacity={0.7}>
+                <View style={[styles.historyCard, isCurrentGame && styles.activeCard]}>
+                    <View style={styles.cardHeader}>
+                        <Text style={styles.dateText}>
+                            {new Date(item.date).toLocaleDateString('vi-VN', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                day: 'numeric',
+                                month: 'numeric',
+                                year: 'numeric'
+                            })}
+                        </Text>
+                        <View style={[styles.badge, isCurrentGame && styles.activeBadge]}>
+                            <Text style={[styles.badgeText, isCurrentGame && styles.activeBadgeText]}>
+                                {isCurrentGame ? 'Đang chơi' : `${item.rounds.length} ván`}
+                            </Text>
+                        </View>
+                    </View>
+
+                    <View style={[styles.winnerSection, isCurrentGame && styles.activeWinnerSection]}>
+                        <Trophy size={16} color={isCurrentGame ? "#3b82f6" : "#fbbf24"} />
+                        <Text style={[styles.winnerText, isCurrentGame && styles.activeWinnerText]}>
+                            {isCurrentGame ? 'Dẫn đầu: ' : 'Thắng: '}
+                            <Text style={{ fontWeight: 'bold' }}>{winner?.name || 'Unknown'}</Text> ({maxScore})
+                        </Text>
+                    </View>
+
+                    <View style={styles.playersList}>
+                        {item.players.filter(p => p.name).map((p, idx) => (
+                            <Text key={idx} style={styles.playerText}>
+                                {p.name}: {totals[idx]}
+                            </Text>
+                        ))}
                     </View>
                 </View>
-
-                <View style={styles.winnerSection}>
-                    <Trophy size={16} color="#fbbf24" />
-                    <Text style={styles.winnerText}>
-                        Thắng: <Text style={{ fontWeight: 'bold' }}>{winner.name}</Text> ({maxScore})
-                    </Text>
-                </View>
-
-                <View style={styles.playersList}>
-                    {item.players.filter(p => p.name).map((p, idx) => (
-                        <Text key={idx} style={styles.playerText}>
-                            {p.name}: {totals[idx]}
-                        </Text>
-                    ))}
-                </View>
-            </View>
+            </TouchableOpacity>
         );
     };
+
+    const displayData = getDisplayData();
 
     return (
         <SafeAreaView style={styles.container}>
@@ -68,9 +103,9 @@ export default function HistoryIndex() {
                 </TouchableOpacity>
             </View>
 
-            {history.length > 0 ? (
+            {displayData.length > 0 ? (
                 <FlatList
-                    data={history.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())}
+                    data={displayData}
                     renderItem={renderItem}
                     keyExtractor={item => item.id.toString()}
                     contentContainerStyle={styles.listContent}
@@ -91,7 +126,6 @@ export default function HistoryIndex() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f9fafb',
     },
     image: {
         width: '100%',
@@ -202,5 +236,21 @@ const styles = StyleSheet.create({
     playerText: {
         fontSize: 14,
         color: '#4b5563',
+    },
+    activeCard: {
+        borderColor: '#22c55e',
+        borderWidth: 2,
+    },
+    activeBadge: {
+        backgroundColor: '#dcfce7',
+    },
+    activeBadgeText: {
+        color: '#15803d',
+    },
+    activeWinnerSection: {
+        backgroundColor: '#dbeafe',
+    },
+    activeWinnerText: {
+        color: '#1e40af',
     },
 });

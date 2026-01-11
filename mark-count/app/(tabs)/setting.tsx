@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import SettingScreen from '@/components/SettingScreen';
 
 
-export default function GameTab() {
+export default function SettingTab() {
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar barStyle="dark-content" />
@@ -16,6 +16,5 @@ export default function GameTab() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f9fafb',
     },
 });

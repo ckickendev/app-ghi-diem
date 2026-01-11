@@ -146,12 +146,12 @@ const GameScreen: React.FC = () => {
                                 <Plus size={20} color="white" />
                                 <Text style={styles.buttonText}>Tạo ván mới</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity
+                            {/* <TouchableOpacity
                                 onPress={() => setShowScores(!showScores)}
                                 style={styles.eyeButton}
                             >
                                 {showScores ? <EyeOff size={20} color="#374151" /> : <Eye size={20} color="#374151" />}
-                            </TouchableOpacity>
+                            </TouchableOpacity> */}
                             <TouchableOpacity
                                 onPress={handleEndGame}
                                 style={styles.endGameButton}
@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     newRoundButton: {
-        flex: 1,
+        flex: 2,
         backgroundColor: '#16a34a',
         flexDirection: 'row',
         alignItems: 'center',
@@ -347,6 +347,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     endGameButton: {
+        flex: 1,
         paddingHorizontal: 20,
         backgroundColor: '#dc2626',
         borderRadius: 8,

@@ -15,6 +15,5 @@ export default function GameTab() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#166534',
     },
 });

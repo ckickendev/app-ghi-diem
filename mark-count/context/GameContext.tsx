@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Audio } from 'expo-av';
 
 const avatarColors = [
     '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A',
@@ -24,16 +25,26 @@ export interface GameSession {
     rounds: Round[];
 }
 
+interface Theme {
+    name: string;
+    color: string;
+    sound: string;
+}
+
 interface GameContextType {
     players: Player[];
     setPlayers: (players: Player[]) => void;
+    theme: Theme;
+    setTheme: (theme: Theme) => void;
+    pauSong: () => void;
+    themeList: Theme[];
     rounds: Round[];
     setRounds: (rounds: Round[]) => void;
     gameEnded: boolean;
     setGameEnded: (ended: boolean) => void;
     history: GameSession[];
     saveCurrentGame: () => void;
-    resetGame: () => void;
+    resetGame: (clearNames?: boolean) => void;
     updatePlayerCount: (count: number) => void;
 }
 
@@ -46,6 +57,48 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
         { name: '', avatar: avatarColors[2] },
         { name: '', avatar: avatarColors[3] }
     ]);
+    const themeList: Theme[] = [
+        { name: 'dark', color: '#111827', sound: 'ngay-xuan-long-phung-sum-vay.mp3' },
+        { name: 'light', color: '#f9fafb', sound: 'ai-chuyen-cu-ban-khong.mp3' },
+        { name: 'blue', color: '#eff6ff', sound: 'ai-chuyen-cu-ban-khong.mp3' }
+    ];
+    const [theme, setTheme] = useState(themeList[1]); // Default to light
+    const [sound, setSound] = useState<Audio.Sound | null>(null);
+
+    const playThemeSound = async (themeName: string) => {
+        try {
+            // Unload previous sound
+            if (sound) {
+                await sound.unloadAsync();
+            }
+
+            const soundAsset = themeName === 'dark'
+                ? require('../assets/sounds/ngay-xuan-long-phung-sum-vay.mp3')
+                : require('../assets/sounds/ai-chuyen-cu-ban-khong.mp3');
+
+            const { sound: newSound } = await Audio.Sound.createAsync(soundAsset);
+            setSound(newSound);
+            await newSound.playAsync();
+        } catch (error) {
+            console.error('Error playing sound:', error);
+        }
+    };
+
+    const pauSong = async () => {
+        if (sound) {
+            await sound.unloadAsync();
+            setSound(null);
+        }
+    };
+
+    // Cleanup sound on unmount
+    useEffect(() => {
+        return sound
+            ? () => {
+                pauSong();
+            }
+            : undefined;
+    }, [sound]);
     const [rounds, setRounds] = useState<Round[]>([]);
     const [gameEnded, setGameEnded] = useState(false);
     const [history, setHistory] = useState<GameSession[]>([]);
@@ -104,12 +157,15 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
         setHistory(prev => [newSession, ...prev]);
     };
 
-    const resetGame = () => {
+    const resetGame = (clearNames: boolean = false) => {
         // Reset rounds but keep player names for convenience? 
         // Or full reset? Requirement said "data will be deleted", usually that refers to the current game session.
         // Let's keep players for now as often preferred, but clear scores.
         setRounds([]);
         setGameEnded(false);
+        if (clearNames) {
+            setPlayers(prev => prev.map(p => ({ ...p, name: '' })));
+        }
     };
 
     const [isLoaded, setIsLoaded] = useState(false);
@@ -126,6 +182,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
                     if (data.players) setPlayers(data.players);
                     if (data.rounds) setRounds(data.rounds);
                     if (typeof data.gameEnded === 'boolean') setGameEnded(data.gameEnded);
+                    if (data.theme) setTheme(data.theme);
                 }
 
                 if (historyJson !== null) {
@@ -146,7 +203,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
 
         const saveData = async () => {
             try {
-                const data = { players, rounds, gameEnded };
+                const data = { players, rounds, gameEnded, theme };
                 await AsyncStorage.setItem('@game_data', JSON.stringify(data));
             } catch (e) {
                 console.error('Failed to save game data', e);
@@ -154,7 +211,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
         };
 
         saveData();
-    }, [players, rounds, gameEnded, isLoaded]);
+    }, [players, rounds, gameEnded, theme, isLoaded]); // added theme dependency
 
     useEffect(() => {
         if (!isLoaded) return;
@@ -181,7 +238,14 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
             history,
             saveCurrentGame,
             resetGame,
-            updatePlayerCount
+            updatePlayerCount,
+            theme,
+            setTheme: (newTheme: Theme) => {
+                setTheme(newTheme);
+                playThemeSound(newTheme.name);
+            },
+            themeList,
+            pauSong
         }}>
             {children}
         </GameContext.Provider>
