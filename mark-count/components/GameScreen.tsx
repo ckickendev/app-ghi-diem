@@ -212,9 +212,12 @@ const GameScreen: React.FC = () => {
                     </View>
                 ) : (
                     <View style={styles.roundsList}>
-                        {rounds.map((round) => (
+                        {rounds.map((round, idx) => (
                             <View key={round.id} style={styles.roundCard}>
                                 <View style={styles.roundGrid}>
+                                    <Text style={styles.roundHeader}>
+                                        {idx + 1}
+                                    </Text>
                                     {round.scores.map((score, idx) => {
                                         if (!players[idx].name) return null;
                                         return (
@@ -457,6 +460,15 @@ const styles = StyleSheet.create({
     },
     roundGrid: {
         flexDirection: 'row',
+    },
+    roundHeader: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        zIndex: 1,
+        padding: 12,
+        alignItems: 'center',
+        backgroundColor: 'white',
     },
     scoreCell: {
         flex: 1,

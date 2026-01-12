@@ -2,16 +2,17 @@ import React from "react";
 import { Text, View, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { useGame } from '../context/GameContext';
 import { Check } from 'lucide-react-native';
+import CustomSwitch from "./custom/SwitchCustom";
 
 const SettingScreen = () => {
-    const { theme, setTheme, themeList } = useGame();
+    const { theme, setTheme, themeList, isPlaySong, setIsPlaySong } = useGame();
 
     return (
         <ScrollView style={styles.container}>
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Giao diện & Âm thanh</Text>
                 <View style={styles.themeList}>
-                    {themeList.map((item, index) => {
+                    {themeList.map((item: any, index: number) => {
                         const isActive = theme.name === item.name;
                         return (
                             <TouchableOpacity
@@ -32,6 +33,10 @@ const SettingScreen = () => {
                             </TouchableOpacity>
                         );
                     })}
+                    <View style={styles.themeItem}>
+                        <Text style={styles.themeName}>Âm thanh</Text>
+                        <CustomSwitch value={isPlaySong} onChange={() => setIsPlaySong(!isPlaySong)} />
+                    </View>
                 </View>
             </View>
         </ScrollView>

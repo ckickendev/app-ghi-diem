@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Audio } from 'expo-av';
+import { useAudioPlayer } from 'expo-audio';
 
 const avatarColors = [
     '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A',
@@ -27,8 +27,8 @@ export interface GameSession {
 
 interface Theme {
     name: string;
-    color: string;
     sound: string;
+    backgroundImage: any;
 }
 
 interface GameContextType {
@@ -36,7 +36,6 @@ interface GameContextType {
     setPlayers: (players: Player[]) => void;
     theme: Theme;
     setTheme: (theme: Theme) => void;
-    pauSong: () => void;
     themeList: Theme[];
     rounds: Round[];
     setRounds: (rounds: Round[]) => void;
@@ -46,6 +45,8 @@ interface GameContextType {
     saveCurrentGame: () => void;
     resetGame: (clearNames?: boolean) => void;
     updatePlayerCount: (count: number) => void;
+    isPlaySong: boolean;
+    setIsPlaySong: (playSong: boolean) => void;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -58,47 +59,59 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
         { name: '', avatar: avatarColors[3] }
     ]);
     const themeList: Theme[] = [
-        { name: 'dark', color: '#111827', sound: 'ngay-xuan-long-phung-sum-vay.mp3' },
-        { name: 'light', color: '#f9fafb', sound: 'ai-chuyen-cu-ban-khong.mp3' },
-        { name: 'blue', color: '#eff6ff', sound: 'ai-chuyen-cu-ban-khong.mp3' }
+        {
+            name: 'dark',
+            // color: '#111827',
+            sound: 'ngay-xuan-long-phung-sum-vay.mp3',
+            backgroundImage: require('../assets/theme/dark.png')
+        },
+        {
+            name: 'light',
+            // color: '#f9fafb',
+            sound: 'ai-chuyen-cu-ban-khong.mp3',
+            backgroundImage: require('../assets/theme/light.png')
+        },
+        {
+            name: 'blue',
+            // color: '#eff6ff',
+            sound: 'ai-chuyen-cu-ban-khong.mp3',
+            backgroundImage: require('../assets/theme/light.png') // Fallback to light if blue.png doesn't exist
+        },
+        {
+            name: 'tet',
+            // color: '#fff1f2',
+            sound: 'ngay-xuan-long-phung-sum-vay.mp3',
+            backgroundImage: require('../assets/theme/tet.png')
+        }
     ];
     const [theme, setTheme] = useState(themeList[1]); // Default to light
-    const [sound, setSound] = useState<Audio.Sound | null>(null);
+    const [isPlaySong, setIsPlaySong] = useState(true);
 
-    const playThemeSound = async (themeName: string) => {
-        try {
-            // Unload previous sound
-            if (sound) {
-                await sound.unloadAsync();
-            }
-
-            const soundAsset = themeName === 'dark'
-                ? require('../assets/sounds/ngay-xuan-long-phung-sum-vay.mp3')
-                : require('../assets/sounds/ai-chuyen-cu-ban-khong.mp3');
-
-            const { sound: newSound } = await Audio.Sound.createAsync(soundAsset);
-            setSound(newSound);
-            await newSound.playAsync();
-        } catch (error) {
-            console.error('Error playing sound:', error);
-        }
+    const getSoundAsset = (themeName: string) => {
+        return themeName === 'dark'
+            ? require('../assets/sounds/ngay-xuan-long-phung-sum-vay.mp3')
+            : require('../assets/sounds/ai-chuyen-cu-ban-khong.mp3');
     };
 
-    const pauSong = async () => {
-        if (sound) {
-            await sound.unloadAsync();
-            setSound(null);
-        }
-    };
+    const player = useAudioPlayer(getSoundAsset(theme.name));
 
-    // Cleanup sound on unmount
+    // Handle theme change / asset replacement
     useEffect(() => {
-        return sound
-            ? () => {
-                pauSong();
-            }
-            : undefined;
-    }, [sound]);
+        if (player) {
+            const newAsset = getSoundAsset(theme.name);
+            player.replace(newAsset);
+            player.loop = true;
+            player.muted = !isPlaySong;
+            player.play();
+        }
+    }, [theme.name, player]);
+
+    // Handle mute change
+    useEffect(() => {
+        if (player) {
+            player.muted = !isPlaySong;
+        }
+    }, [isPlaySong, player]);
     const [rounds, setRounds] = useState<Round[]>([]);
     const [gameEnded, setGameEnded] = useState(false);
     const [history, setHistory] = useState<GameSession[]>([]);
@@ -240,12 +253,10 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
             resetGame,
             updatePlayerCount,
             theme,
-            setTheme: (newTheme: Theme) => {
-                setTheme(newTheme);
-                playThemeSound(newTheme.name);
-            },
+            setTheme,
             themeList,
-            pauSong
+            isPlaySong,
+            setIsPlaySong,
         }}>
             {children}
         </GameContext.Provider>
