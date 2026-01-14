@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
 import { useGame } from '../context/GameContext';
 
 import { Minus, Plus } from 'lucide-react-native';
@@ -73,7 +73,7 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ onStart }) => {
                         onPress={() => {
                             const validPlayers = players.filter(p => p.name.trim());
                             if (validPlayers.length < 2) {
-                                alert('Cần ít nhất 2 người chơi');
+                                Alert.alert('Cần ít nhất 2 người chơi');
                                 return;
                             }
                             onStart();

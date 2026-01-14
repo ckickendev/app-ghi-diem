@@ -69,20 +69,20 @@ const GameScreen: React.FC = () => {
     };
 
     const handleNewGame = () => {
-        // Alert.alert(
-        //     "Dữ liệu sẽ được xoá để qua ván mới",
-        //     "Bạn có chắc muốn chơi lại từ đầu?",
-        //     [
-        //         { text: "Hủy", style: "cancel" },
-        //         {
-        //             text: "Đồng ý",
-        //             onPress: () => {
-        saveCurrentGame();
-        resetGame();
-        //             }
-        //         }
-        //     ]
-        // );
+        Alert.alert(
+            "Dữ liệu sẽ được xoá để qua ván mới",
+            "Bạn có chắc muốn chơi lại từ đầu?",
+            [
+                { text: "Hủy", style: "cancel" },
+                {
+                    text: "Đồng ý",
+                    onPress: () => {
+                        saveCurrentGame();
+                        resetGame();
+                    }
+                }
+            ]
+        );
     };
 
     return (
@@ -260,6 +260,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#f9fafb',
+        // opacity: 0
     },
     header: {
         backgroundColor: 'white',

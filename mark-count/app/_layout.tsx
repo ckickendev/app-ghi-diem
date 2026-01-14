@@ -9,20 +9,14 @@ import { useEffect } from 'react';
 SplashScreen.preventAutoHideAsync();
 
 function ThemeContent() {
-  const { theme } = useGame();
 
   return (
-    <ImageBackground
-      source={theme.backgroundImage}
-      style={styles.container}
-      resizeMode="cover"
-    >
-      <View style={[styles.container]}>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        </Stack>
-      </View>
-    </ImageBackground>
+
+    <View style={[styles.container]}>
+      <Stack>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      </Stack>
+    </View>
   );
 }
 
