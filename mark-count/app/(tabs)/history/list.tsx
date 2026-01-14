@@ -7,29 +7,27 @@ import { Trophy } from 'lucide-react-native';
 
 export default function HistoryIndex() {
     const router = useRouter();
-    const { history, players, rounds, gameEnded } = useGame();
+    const { history, players, rounds, gameEnded, loadGame, currentGameId } = useGame();
     const [isToday, setIsToday] = React.useState(true);
 
     const getDisplayData = () => {
-        let data = [...history];
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
 
-        // Add current game if it has rounds and hasn't ended
-        if (rounds.length > 0 && !gameEnded) {
-            const currentSession: GameSession = {
-                id: -1, // Special ID for active game
-                date: new Date().toISOString(),
-                players: players,
-                rounds: rounds
-            };
-            data.unshift(currentSession);
-        }
+        let filteredData = history.filter(item => {
+            const itemDate = new Date(item.date);
+            if (isToday) {
+                return itemDate >= todayStart;
+            } else {
+                return itemDate < todayStart;
+            }
+        });
 
-        // Sort by date desc
-        return data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        return filteredData.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     };
 
     const renderItem = ({ item }: { item: GameSession }) => {
-        const isCurrentGame = item.id === -1;
+        const isCurrentGame = item.id === currentGameId;
 
         // Calculate winner & total scores for summary
         const totals = item.players.map((_, pIdx) =>
@@ -45,7 +43,8 @@ export default function HistoryIndex() {
             if (isCurrentGame) {
                 router.push('/(tabs)/history/game');
             } else {
-                // Future: Show details for finished games
+                loadGame(item);
+                router.push('/(tabs)/history/game');
             }
         };
 
@@ -62,9 +61,9 @@ export default function HistoryIndex() {
                                 year: 'numeric'
                             })}
                         </Text>
-                        <View style={[styles.badge, isCurrentGame && styles.activeBadge]}>
-                            <Text style={[styles.badgeText, isCurrentGame && styles.activeBadgeText]}>
-                                {isCurrentGame ? 'Đang chơi' : `${item.rounds.length} ván`}
+                        <View style={[styles.badge, (isCurrentGame || !item.isEnded) && styles.activeBadge]}>
+                            <Text style={[styles.badgeText, (isCurrentGame || !item.isEnded) && styles.activeBadgeText]}>
+                                {isCurrentGame ? 'Đang chơi' : item.isEnded ? 'Đã xong' : 'Chưa xong'}
                             </Text>
                         </View>
                     </View>

@@ -11,6 +11,13 @@ const GameScreen: React.FC = () => {
     const [editingPlayer, setEditingPlayer] = useState<number | null>(null);
     const [tempName, setTempName] = useState('');
 
+    // Auto-save to history when rounds change or game state changes
+    React.useEffect(() => {
+        if (rounds.length > 0) {
+            saveCurrentGame();
+        }
+    }, [rounds, gameEnded]);
+
     const getTotalScores = () => {
         const totals = new Array(players.length).fill(0);
         rounds.forEach((round) => {
@@ -31,6 +38,7 @@ const GameScreen: React.FC = () => {
             scores: scores
         }]);
         setShowNewRound(false);
+        // saveCurrentGame() here would use old rounds. 
     };
 
     const handleDeleteRound = (id: number) => {
@@ -146,12 +154,6 @@ const GameScreen: React.FC = () => {
                                 <Plus size={20} color="white" />
                                 <Text style={styles.buttonText}>Tạo ván mới</Text>
                             </TouchableOpacity>
-                            {/* <TouchableOpacity
-                                onPress={() => setShowScores(!showScores)}
-                                style={styles.eyeButton}
-                            >
-                                {showScores ? <EyeOff size={20} color="#374151" /> : <Eye size={20} color="#374151" />}
-                            </TouchableOpacity> */}
                             <TouchableOpacity
                                 onPress={handleEndGame}
                                 style={styles.endGameButton}
@@ -252,6 +254,16 @@ const GameScreen: React.FC = () => {
                 players={players}
                 onSave={handleAddRound}
             />
+            <View style={styles.eyeButtonContainer}>
+                <TouchableOpacity
+                    onPress={() => setShowScores(!showScores)}
+                    style={styles.eyeButton}
+                >
+                    {showScores ? <EyeOff size={20} color="#374151" /> : <Eye size={20} color="#374151" />}
+                </TouchableOpacity>
+
+            </View>
+
         </View>
     );
 };
@@ -342,6 +354,11 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         borderRadius: 8,
         gap: 8,
+    },
+    eyeButtonContainer: {
+        position: 'absolute',
+        bottom: 16,
+        right: 16,
     },
     eyeButton: {
         padding: 12,

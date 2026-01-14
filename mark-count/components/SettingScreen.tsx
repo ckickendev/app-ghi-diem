@@ -5,12 +5,12 @@ import { Check } from 'lucide-react-native';
 import CustomSwitch from "./custom/SwitchCustom";
 
 const SettingScreen = () => {
-    const { theme, setTheme, themeList, isPlaySong, setIsPlaySong } = useGame();
+    const { theme, setTheme, themeList, isPlaySong, setIsPlaySong, soundList } = useGame();
 
     return (
         <ScrollView style={styles.container}>
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Giao diện & Âm thanh</Text>
+                <Text style={styles.sectionTitle}>Chủ đề</Text>
                 <View style={styles.themeList}>
                     {themeList.map((item: any, index: number) => {
                         const isActive = theme.name === item.name;
@@ -27,7 +27,29 @@ const SettingScreen = () => {
                                     <Text style={[styles.themeName, isActive && styles.themeNameActive]}>
                                         {item.name.charAt(0).toUpperCase() + item.name.slice(1)}
                                     </Text>
-                                    <Text style={styles.themeSound}>{item.sound}</Text>
+                                </View>
+                                {isActive && <Check size={20} color="#16a34a" />}
+                            </TouchableOpacity>
+                        );
+                    })}
+                </View>
+
+                <Text style={styles.sectionTitle}>Âm thanh</Text>
+                {/* <View style={styles.themeList}>
+                    {soundList.map((item: any, index: number) => {
+                        const isActive = theme.name === item.name;
+                        return (
+                            <TouchableOpacity
+                                key={index}
+                                style={[
+                                    styles.themeItem,
+                                    isActive && styles.themeItemActive
+                                ]}
+                            >
+                                <View style={styles.themeInfo}>
+                                    <Text style={[styles.themeName, isActive && styles.themeNameActive]}>
+                                        {item.name.charAt(0).toUpperCase() + item.name.slice(1)}
+                                    </Text>
                                 </View>
                                 {isActive && <Check size={20} color="#16a34a" />}
                             </TouchableOpacity>
@@ -37,7 +59,7 @@ const SettingScreen = () => {
                         <Text style={styles.themeName}>Âm thanh</Text>
                         <CustomSwitch value={isPlaySong} onChange={() => setIsPlaySong(!isPlaySong)} />
                     </View>
-                </View>
+                </View> */}
             </View>
         </ScrollView>
     );

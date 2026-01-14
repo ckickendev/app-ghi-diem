@@ -23,12 +23,17 @@ export interface GameSession {
     date: string;
     players: Player[];
     rounds: Round[];
+    isEnded: boolean;
 }
 
 interface Theme {
     name: string;
-    sound: string;
     backgroundImage: any;
+}
+
+interface Sound {
+    name: string;
+    source: string;
 }
 
 interface GameContextType {
@@ -47,6 +52,9 @@ interface GameContextType {
     updatePlayerCount: (count: number) => void;
     isPlaySong: boolean;
     setIsPlaySong: (playSong: boolean) => void;
+    loadGame: (session: GameSession) => void;
+    soundList: Sound[];
+    currentGameId: number | null;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -61,36 +69,34 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     const themeList: Theme[] = [
         {
             name: 'dark',
-            // color: '#111827',
-            sound: 'ngay-xuan-long-phung-sum-vay.mp3',
             backgroundImage: require('../assets/theme/dark.png')
         },
         {
             name: 'light',
-            // color: '#f9fafb',
-            sound: 'ai-chuyen-cu-ban-khong.mp3',
             backgroundImage: require('../assets/theme/light.png')
         },
         {
-            name: 'blue',
-            // color: '#eff6ff',
-            sound: 'ai-chuyen-cu-ban-khong.mp3',
-            backgroundImage: require('../assets/theme/light.png') // Fallback to light if blue.png doesn't exist
-        },
-        {
             name: 'tet',
-            // color: '#fff1f2',
-            sound: 'ngay-xuan-long-phung-sum-vay.mp3',
             backgroundImage: require('../assets/theme/tet.png')
         }
     ];
-    const [theme, setTheme] = useState(themeList[1]); // Default to light
+    const soundList: Sound[] = [
+        {
+            name: 'Ngày xuân long phụng sum vay',
+            source: require('../assets/sounds/ngay-xuan-long-phung-sum-vay.mp3')
+        },
+        {
+            name: 'Ai chuyện cũ bán không',
+            source: require('../assets/sounds/ai-chuyen-cu-ban-khong.mp3')
+        }
+    ];
+    const [theme, setTheme] = useState(themeList[2]); // Default to tet
     const [isPlaySong, setIsPlaySong] = useState(true);
 
     const getSoundAsset = (themeName: string) => {
-        return themeName === 'dark'
-            ? require('../assets/sounds/ngay-xuan-long-phung-sum-vay.mp3')
-            : require('../assets/sounds/ai-chuyen-cu-ban-khong.mp3');
+        return (themeName === 'dark' || themeName === 'tet')
+            ? soundList[0].source
+            : soundList[1].source;
     };
 
     const player = useAudioPlayer(getSoundAsset(theme.name));
@@ -115,6 +121,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     const [rounds, setRounds] = useState<Round[]>([]);
     const [gameEnded, setGameEnded] = useState(false);
     const [history, setHistory] = useState<GameSession[]>([]);
+    const [currentGameId, setCurrentGameId] = useState<number | null>(null);
 
     const updatePlayerCount = (count: number) => {
         if (count < 2 || count > 8) return;
@@ -160,25 +167,44 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     const saveCurrentGame = () => {
         if (rounds.length === 0) return;
 
+        const sessionId = currentGameId || Date.now();
         const newSession: GameSession = {
-            id: Date.now(),
+            id: sessionId,
             date: new Date().toISOString(),
-            players: [...players], // Copy players to avoid reference issues
-            rounds: [...rounds]    // Copy rounds
+            players: [...players],
+            rounds: [...rounds],
+            isEnded: gameEnded
         };
 
-        setHistory(prev => [newSession, ...prev]);
+        setHistory(prev => {
+            const index = prev.findIndex(s => s.id === sessionId);
+            if (index !== -1) {
+                const newHistory = [...prev];
+                newHistory[index] = newSession;
+                return newHistory;
+            }
+            return [newSession, ...prev];
+        });
+        setCurrentGameId(sessionId);
     };
 
     const resetGame = (clearNames: boolean = false) => {
-        // Reset rounds but keep player names for convenience? 
-        // Or full reset? Requirement said "data will be deleted", usually that refers to the current game session.
-        // Let's keep players for now as often preferred, but clear scores.
         setRounds([]);
         setGameEnded(false);
+        setCurrentGameId(null);
         if (clearNames) {
             setPlayers(prev => prev.map(p => ({ ...p, name: '' })));
         }
+    };
+
+    const loadGame = (session: GameSession) => {
+        if (rounds.length > 0) {
+            saveCurrentGame();
+        }
+        setPlayers(session.players);
+        setRounds(session.rounds);
+        setGameEnded(false);
+        setCurrentGameId(session.id);
     };
 
     const [isLoaded, setIsLoaded] = useState(false);
@@ -196,6 +222,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
                     if (data.rounds) setRounds(data.rounds);
                     if (typeof data.gameEnded === 'boolean') setGameEnded(data.gameEnded);
                     if (data.theme) setTheme(data.theme);
+                    if (data.currentGameId) setCurrentGameId(data.currentGameId);
                 }
 
                 if (historyJson !== null) {
@@ -216,7 +243,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
 
         const saveData = async () => {
             try {
-                const data = { players, rounds, gameEnded, theme };
+                const data = { players, rounds, gameEnded, theme, currentGameId };
                 await AsyncStorage.setItem('@game_data', JSON.stringify(data));
             } catch (e) {
                 console.error('Failed to save game data', e);
@@ -257,6 +284,9 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
             themeList,
             isPlaySong,
             setIsPlaySong,
+            loadGame,
+            currentGameId,
+            soundList,
         }}>
             {children}
         </GameContext.Provider>
