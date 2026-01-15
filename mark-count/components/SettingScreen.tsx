@@ -5,7 +5,7 @@ import { Check } from 'lucide-react-native';
 import CustomSwitch from "./custom/SwitchCustom";
 
 const SettingScreen = () => {
-    const { theme, setTheme, themeList, isPlaySong, setIsPlaySong, soundList } = useGame();
+    const { theme, setTheme, themeList, isPlaySong, setIsPlaySong, soundList, currentSound, setCurrentSound } = useGame();
 
     return (
         <ScrollView style={styles.container}>
@@ -34,10 +34,10 @@ const SettingScreen = () => {
                     })}
                 </View>
 
-                <Text style={styles.sectionTitle}>Âm thanh</Text>
-                {/* <View style={styles.themeList}>
+                <Text style={{ ...styles.sectionTitle, marginTop: 24 }}>Âm thanh</Text>
+                <View style={styles.themeList}>
                     {soundList.map((item: any, index: number) => {
-                        const isActive = theme.name === item.name;
+                        const isActive = currentSound.name === item.name;
                         return (
                             <TouchableOpacity
                                 key={index}
@@ -45,10 +45,11 @@ const SettingScreen = () => {
                                     styles.themeItem,
                                     isActive && styles.themeItemActive
                                 ]}
+                                onPress={() => setCurrentSound(item)}
                             >
                                 <View style={styles.themeInfo}>
                                     <Text style={[styles.themeName, isActive && styles.themeNameActive]}>
-                                        {item.name.charAt(0).toUpperCase() + item.name.slice(1)}
+                                        {item.name}
                                     </Text>
                                 </View>
                                 {isActive && <Check size={20} color="#16a34a" />}
@@ -56,10 +57,10 @@ const SettingScreen = () => {
                         );
                     })}
                     <View style={styles.themeItem}>
-                        <Text style={styles.themeName}>Âm thanh</Text>
+                        <Text style={styles.themeName}>Bật nhạc nền</Text>
                         <CustomSwitch value={isPlaySong} onChange={() => setIsPlaySong(!isPlaySong)} />
                     </View>
-                </View> */}
+                </View>
             </View>
         </ScrollView>
     );

@@ -12,7 +12,6 @@ interface Player {
     avatar: string;
 }
 
-
 interface Round {
     id: number;
     scores: number[];
@@ -54,6 +53,8 @@ interface GameContextType {
     setIsPlaySong: (playSong: boolean) => void;
     loadGame: (session: GameSession) => void;
     soundList: Sound[];
+    currentSound: Sound;
+    setCurrentSound: (sound: Sound) => void;
     currentGameId: number | null;
 }
 
@@ -91,26 +92,20 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
         }
     ];
     const [theme, setTheme] = useState(themeList[2]); // Default to tet
+    const [currentSound, setCurrentSound] = useState<Sound>(soundList[0]);
     const [isPlaySong, setIsPlaySong] = useState(true);
 
-    const getSoundAsset = (themeName: string) => {
-        return (themeName === 'dark' || themeName === 'tet')
-            ? soundList[0].source
-            : soundList[1].source;
-    };
+    const player = useAudioPlayer(currentSound.source);
 
-    const player = useAudioPlayer(getSoundAsset(theme.name));
-
-    // Handle theme change / asset replacement
+    // Handle sound change / asset replacement
     useEffect(() => {
         if (player) {
-            const newAsset = getSoundAsset(theme.name);
-            player.replace(newAsset);
+            player.replace(currentSound.source);
             player.loop = true;
             player.muted = !isPlaySong;
             player.play();
         }
-    }, [theme.name, player]);
+    }, [currentSound, player]);
 
     // Handle mute change
     useEffect(() => {
@@ -118,6 +113,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
             player.muted = !isPlaySong;
         }
     }, [isPlaySong, player]);
+
     const [rounds, setRounds] = useState<Round[]>([]);
     const [gameEnded, setGameEnded] = useState(false);
     const [history, setHistory] = useState<GameSession[]>([]);
@@ -222,6 +218,11 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
                     if (data.rounds) setRounds(data.rounds);
                     if (typeof data.gameEnded === 'boolean') setGameEnded(data.gameEnded);
                     if (data.theme) setTheme(data.theme);
+                    if (data.currentSound) {
+                        const savedSound = soundList.find(s => s.name === data.currentSound.name);
+                        if (savedSound) setCurrentSound(savedSound);
+                    }
+                    if (typeof data.isPlaySong === 'boolean') setIsPlaySong(data.isPlaySong);
                     if (data.currentGameId) setCurrentGameId(data.currentGameId);
                 }
 
@@ -243,7 +244,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
 
         const saveData = async () => {
             try {
-                const data = { players, rounds, gameEnded, theme, currentGameId };
+                const data = { players, rounds, gameEnded, theme, currentGameId, currentSound, isPlaySong };
                 await AsyncStorage.setItem('@game_data', JSON.stringify(data));
             } catch (e) {
                 console.error('Failed to save game data', e);
@@ -287,6 +288,8 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
             loadGame,
             currentGameId,
             soundList,
+            currentSound,
+            setCurrentSound,
         }}>
             {children}
         </GameContext.Provider>
