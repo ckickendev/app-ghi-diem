@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Alert, Switch } from 'react-native';
 import { useGame } from '../context/GameContext';
 
 import { Minus, Plus } from 'lucide-react-native';
@@ -9,7 +9,15 @@ interface SetupScreenProps {
 }
 
 const SetupScreen: React.FC<SetupScreenProps> = ({ onStart }) => {
-    const { players, setPlayers, updatePlayerCount } = useGame();
+    const {
+        players,
+        setPlayers,
+        updatePlayerCount,
+        roundLimit,
+        setRoundLimit,
+        isRoundLimitEnabled,
+        setIsRoundLimitEnabled
+    } = useGame();
 
     return (
         <KeyboardAvoidingView
@@ -24,7 +32,7 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ onStart }) => {
             >
                 <View style={styles.card}>
                     <View style={styles.header}>
-                        <Text style={styles.title}>Thiết lập game</Text>
+                        {/* <Text style={styles.title}>Thiết lập game</Text> */}
                         <Text style={styles.subtitle}>Số lượng người chơi: {players.length}</Text>
 
                         <View style={styles.countControl}>
@@ -45,6 +53,33 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ onStart }) => {
                             >
                                 <Plus size={24} color={players.length >= 8 ? '#9ca3af' : 'white'} />
                             </TouchableOpacity>
+                        </View>
+
+                        <View style={styles.limitContainer}>
+                            <View style={styles.limitRow}>
+                                <Text style={styles.limitLabel}>Giới hạn số vòng</Text>
+                                <Switch
+                                    value={isRoundLimitEnabled}
+                                    onValueChange={setIsRoundLimitEnabled}
+                                    trackColor={{ false: '#e5e7eb', true: '#16a34a' }}
+                                    thumbColor={isRoundLimitEnabled ? 'white' : '#f4f3f4'}
+                                />
+                            </View>
+                            {isRoundLimitEnabled && (
+                                <View style={styles.limitInputRow}>
+                                    <Text style={styles.limitInputLabel}>Số vòng:</Text>
+                                    <TextInput
+                                        style={styles.limitInput}
+                                        keyboardType="number-pad"
+                                        value={roundLimit.toString()}
+                                        onChangeText={(text) => {
+                                            const val = parseInt(text) || 0;
+                                            setRoundLimit(val);
+                                        }}
+                                        placeholder="10"
+                                    />
+                                </View>
+                            )}
                         </View>
                     </View>
                     <View style={styles.playersList}>
@@ -109,7 +144,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 36,
         fontWeight: 'bold',
-        color: 'white',
+        color: '1c5b32ff',
         marginBottom: 8,
     },
     subtitle: {
@@ -204,6 +239,43 @@ const styles = StyleSheet.create({
         color: '#1f2937',
         width: 32,
         textAlign: 'center',
+    },
+    limitContainer: {
+        marginTop: 16,
+        padding: 16,
+        backgroundColor: '#f9fafb',
+        borderRadius: 16,
+        width: '100%',
+    },
+    limitRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    limitLabel: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#374151',
+    },
+    limitInputRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 12,
+        gap: 12,
+    },
+    limitInputLabel: {
+        fontSize: 14,
+        color: '#6b7280',
+    },
+    limitInput: {
+        flex: 1,
+        height: 40,
+        borderWidth: 1,
+        borderColor: '#e5e7eb',
+        borderRadius: 8,
+        paddingHorizontal: 12,
+        fontSize: 16,
+        backgroundColor: 'white',
     },
 });
 

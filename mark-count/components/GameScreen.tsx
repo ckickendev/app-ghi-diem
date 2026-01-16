@@ -5,7 +5,18 @@ import NewRoundModal from './NewRoundModal';
 import { useGame } from '../context/GameContext';
 
 const GameScreen: React.FC = () => {
-    const { players, setPlayers, rounds, setRounds, gameEnded, setGameEnded, resetGame, saveCurrentGame } = useGame();
+    const {
+        players,
+        setPlayers,
+        rounds,
+        setRounds,
+        gameEnded,
+        setGameEnded,
+        resetGame,
+        saveCurrentGame,
+        roundLimit,
+        isRoundLimitEnabled
+    } = useGame();
     const [showNewRound, setShowNewRound] = useState(false);
     const [showScores, setShowScores] = useState(false);
     const [editingPlayer, setEditingPlayer] = useState<number | null>(null);
@@ -33,12 +44,22 @@ const GameScreen: React.FC = () => {
     const totals = getTotalScores();
 
     const handleAddRound = (scores: number[]) => {
-        setRounds([...rounds, {
+        const newRounds = [...rounds, {
             id: Date.now(),
             scores: scores
-        }]);
+        }];
+        setRounds(newRounds);
         setShowNewRound(false);
-        // saveCurrentGame() here would use old rounds. 
+
+        // Check for round limit
+        if (isRoundLimitEnabled && newRounds.length >= roundLimit) {
+            setGameEnded(true);
+            setShowScores(true);
+            Alert.alert(
+                'Game kết thúc',
+                `Đã đạt giới hạn ${roundLimit} ván chơi.`
+            );
+        }
     };
 
     const handleDeleteRound = (id: number) => {

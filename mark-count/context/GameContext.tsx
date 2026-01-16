@@ -56,6 +56,10 @@ interface GameContextType {
     currentSound: Sound;
     setCurrentSound: (sound: Sound) => void;
     currentGameId: number | null;
+    roundLimit: number;
+    setRoundLimit: (limit: number) => void;
+    isRoundLimitEnabled: boolean;
+    setIsRoundLimitEnabled: (enabled: boolean) => void;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -118,6 +122,8 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     const [gameEnded, setGameEnded] = useState(false);
     const [history, setHistory] = useState<GameSession[]>([]);
     const [currentGameId, setCurrentGameId] = useState<number | null>(null);
+    const [roundLimit, setRoundLimit] = useState(10);
+    const [isRoundLimitEnabled, setIsRoundLimitEnabled] = useState(false);
 
     const updatePlayerCount = (count: number) => {
         if (count < 2 || count > 8) return;
@@ -224,6 +230,8 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
                     }
                     if (typeof data.isPlaySong === 'boolean') setIsPlaySong(data.isPlaySong);
                     if (data.currentGameId) setCurrentGameId(data.currentGameId);
+                    if (data.roundLimit) setRoundLimit(data.roundLimit);
+                    if (typeof data.isRoundLimitEnabled === 'boolean') setIsRoundLimitEnabled(data.isRoundLimitEnabled);
                 }
 
                 if (historyJson !== null) {
@@ -244,7 +252,17 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
 
         const saveData = async () => {
             try {
-                const data = { players, rounds, gameEnded, theme, currentGameId, currentSound, isPlaySong };
+                const data = {
+                    players,
+                    rounds,
+                    gameEnded,
+                    theme,
+                    currentGameId,
+                    currentSound,
+                    isPlaySong,
+                    roundLimit,
+                    isRoundLimitEnabled
+                };
                 await AsyncStorage.setItem('@game_data', JSON.stringify(data));
             } catch (e) {
                 console.error('Failed to save game data', e);
@@ -290,6 +308,10 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
             soundList,
             currentSound,
             setCurrentSound,
+            roundLimit,
+            setRoundLimit,
+            isRoundLimitEnabled,
+            setIsRoundLimitEnabled,
         }}>
             {children}
         </GameContext.Provider>
