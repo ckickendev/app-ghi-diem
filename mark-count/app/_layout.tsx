@@ -9,6 +9,19 @@ import { useEffect } from 'react';
 SplashScreen.preventAutoHideAsync();
 
 function ThemeContent() {
+  const { isLoaded } = useGame();
+
+  useEffect(() => {
+    if (isLoaded) {
+      SplashScreen.hideAsync().catch((err) => {
+        console.warn("Failed to hide splash screen:", err);
+      });
+    }
+  }, [isLoaded]);
+
+  if (!isLoaded) {
+    return null;
+  }
 
   return (
 
@@ -21,11 +34,6 @@ function ThemeContent() {
 }
 
 export default function RootLayout() {
-  useEffect(() => {
-    // Hide the splash screen after the first render
-    SplashScreen.hideAsync();
-  }, []);
-
   return (
     <SafeAreaProvider>
       <GameProvider>

@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAudioPlayer } from 'expo-audio';
+import { AppState } from 'react-native';
 
 const avatarColors = [
     '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A',
@@ -60,6 +61,7 @@ interface GameContextType {
     setRoundLimit: (limit: number) => void;
     isRoundLimitEnabled: boolean;
     setIsRoundLimitEnabled: (enabled: boolean) => void;
+    isLoaded: boolean;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -117,6 +119,23 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
             player.muted = !isPlaySong;
         }
     }, [isPlaySong, player]);
+
+    // Handle AppState (pause when background)
+    useEffect(() => {
+        const subscription = AppState.addEventListener('change', nextAppState => {
+            if (player) {
+                if (nextAppState === 'active') {
+                    if (isPlaySong) player.play();
+                } else {
+                    player.pause();
+                }
+            }
+        });
+
+        return () => {
+            subscription.remove();
+        };
+    }, [player, isPlaySong]);
 
     const [rounds, setRounds] = useState<Round[]>([]);
     const [gameEnded, setGameEnded] = useState(false);
@@ -312,6 +331,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
             setRoundLimit,
             isRoundLimitEnabled,
             setIsRoundLimitEnabled,
+            isLoaded,
         }}>
             {children}
         </GameContext.Provider>
