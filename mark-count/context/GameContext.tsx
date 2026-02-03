@@ -105,12 +105,10 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
 
     // Handle sound change / asset replacement
     useEffect(() => {
-        if (player) {
-            player.replace(currentSound.source);
-            player.loop = true;
-            player.muted = !isPlaySong;
-            player.play();
-        }
+        if (!player) return;
+        player.replace(currentSound.source);
+        player.loop = false;
+        player.muted = !isPlaySong;
     }, [currentSound, player]);
 
     // Handle mute change
