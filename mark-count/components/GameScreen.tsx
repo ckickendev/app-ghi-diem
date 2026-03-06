@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert, TextInput } from 'react-native';
-import { Plus, Edit2, Save, Trash2, Eye, EyeOff, Trophy } from 'lucide-react-native';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
+import { Plus, Eye, EyeOff, Trophy } from 'lucide-react-native';
 import NewRoundModal from './NewRoundModal';
 import { useGame } from '../context/GameContext';
+import PlayerHeader from './Game/PlayerHeader';
+import GameSummary from './Game/GameSummary';
+import RoundsList from './Game/RoundsList';
 
 const GameScreen: React.FC = () => {
     const {
@@ -23,27 +26,25 @@ const GameScreen: React.FC = () => {
     const [tempName, setTempName] = useState('');
 
     // Auto-save to history when rounds change or game state changes
-    React.useEffect(() => {
+    useEffect(() => {
         if (rounds.length > 0) {
             saveCurrentGame();
         }
-    }, [rounds, gameEnded]);
+    }, [rounds, gameEnded, saveCurrentGame]);
 
-    const getTotalScores = () => {
-        const totals = new Array(players.length).fill(0);
+    const totals = useMemo(() => {
+        const results = new Array(players.length).fill(0);
         rounds.forEach((round) => {
             round.scores.forEach((score, idx) => {
-                if (idx < totals.length) {
-                    totals[idx] += score;
+                if (idx < results.length) {
+                    results[idx] += score;
                 }
             });
         });
-        return totals;
-    };
+        return results;
+    }, [players.length, rounds]);
 
-    const totals = getTotalScores();
-
-    const handleAddRound = (scores: number[]) => {
+    const handleAddRound = useCallback((scores: number[]) => {
         const newRounds = [...rounds, {
             id: Date.now(),
             scores: scores
@@ -51,7 +52,6 @@ const GameScreen: React.FC = () => {
         setRounds(newRounds);
         setShowNewRound(false);
 
-        // Check for round limit
         if (isRoundLimitEnabled && newRounds.length >= roundLimit) {
             setGameEnded(true);
             setShowScores(true);
@@ -60,9 +60,9 @@ const GameScreen: React.FC = () => {
                 `Đã đạt giới hạn ${roundLimit} ván chơi.`
             );
         }
-    };
+    }, [rounds, setRounds, isRoundLimitEnabled, roundLimit, setGameEnded]);
 
-    const handleDeleteRound = (id: number) => {
+    const handleDeleteRound = useCallback((id: number) => {
         Alert.alert(
             "Xóa ván này?",
             "",
@@ -71,14 +71,14 @@ const GameScreen: React.FC = () => {
                 { text: "Xóa", style: "destructive", onPress: () => setRounds(rounds.filter(r => r.id !== id)) }
             ]
         );
-    };
+    }, [rounds, setRounds]);
 
-    const handleEditPlayer = (idx: number) => {
+    const handleEditPlayer = useCallback((idx: number) => {
         setEditingPlayer(idx);
         setTempName(players[idx].name);
-    };
+    }, [players]);
 
-    const handleSavePlayerName = () => {
+    const handleSavePlayerName = useCallback(() => {
         if (tempName.trim() && editingPlayer !== null) {
             const newPlayers = [...players];
             newPlayers[editingPlayer].name = tempName.trim();
@@ -86,18 +86,18 @@ const GameScreen: React.FC = () => {
         }
         setEditingPlayer(null);
         setTempName('');
-    };
+    }, [tempName, editingPlayer, players, setPlayers]);
 
-    const handleEndGame = () => {
+    const handleEndGame = useCallback(() => {
         if (rounds.length === 0) {
             Alert.alert('Thông báo', 'Chưa có ván nào!');
             return;
         }
         setGameEnded(true);
         setShowScores(true);
-    };
+    }, [rounds.length, setGameEnded]);
 
-    const handleNewGame = () => {
+    const handleNewGame = useCallback(() => {
         Alert.alert(
             "Dữ liệu sẽ được xoá để qua ván mới",
             "Bạn có chắc muốn chơi lại từ đầu?",
@@ -112,58 +112,22 @@ const GameScreen: React.FC = () => {
                 }
             ]
         );
-    };
+    }, [saveCurrentGame, resetGame]);
 
     return (
         <View style={styles.container}>
-            {/* Header with players */}
             <View style={styles.header}>
-                <View style={styles.playersGrid}>
-                    {players.map((player, idx) => {
-                        if (!player.name) return null;
-                        const total = totals[idx];
-                        return (
-                            <View key={idx} style={styles.playerColumn}>
-                                {editingPlayer === idx ? (
-                                    <View style={styles.editNameContainer}>
-                                        <TextInput
-                                            style={styles.editNameInput}
-                                            value={tempName}
-                                            onChangeText={setTempName}
-                                            autoFocus
-                                        />
-                                        <TouchableOpacity
-                                            onPress={handleSavePlayerName}
-                                            style={styles.saveNameButton}
-                                        >
-                                            <Save size={16} color="white" />
-                                        </TouchableOpacity>
-                                    </View>
-                                ) : (
-                                    <>
-                                        <View style={[styles.playerAvatar, { backgroundColor: player.avatar }]}>
-                                            <Text style={styles.playerAvatarText}>{player.name[0].toUpperCase()}</Text>
-                                        </View>
-                                        <View style={styles.nameRow}>
-                                            <Text style={styles.playerName} numberOfLines={1}>{player.name}</Text>
-                                            <TouchableOpacity onPress={() => handleEditPlayer(idx)}>
-                                                <Edit2 size={12} color="#9ca3af" />
-                                            </TouchableOpacity>
-                                        </View>
-                                        {(gameEnded || showScores) && (
-                                            <Text style={[
-                                                styles.totalScore,
-                                                total >= 0 ? styles.positiveScore : styles.negativeScore
-                                            ]}>
-                                                {total >= 0 ? '+' : ''}{total}
-                                            </Text>
-                                        )}
-                                    </>
-                                )}
-                            </View>
-                        );
-                    })}
-                </View>
+                <PlayerHeader
+                    players={players}
+                    totals={totals}
+                    gameEnded={gameEnded}
+                    showScores={showScores}
+                    editingPlayer={editingPlayer}
+                    tempName={tempName}
+                    setTempName={setTempName}
+                    onEditPlayer={handleEditPlayer}
+                    onSavePlayerName={handleSavePlayerName}
+                />
 
                 <View style={styles.controls}>
                     {!gameEnded ? (
@@ -194,78 +158,22 @@ const GameScreen: React.FC = () => {
             </View>
 
             <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-                {/* Game ended summary */}
                 {gameEnded && (
-                    <View style={styles.summaryCard}>
-                        <View style={styles.summaryHeader}>
-                            <Trophy size={48} color="white" />
-                            <Text style={styles.summaryTitle}>Kết quả cuối cùng</Text>
-                        </View>
-                        <View style={styles.rankings}>
-                            {players
-                                .map((p, idx) => ({ ...p, idx, total: totals[idx] }))
-                                .filter(p => p.name)
-                                .sort((a, b) => b.total - a.total)
-                                .map((player, rank) => (
-                                    <View key={player.idx} style={styles.rankingRow}>
-                                        <View style={styles.rankingLeft}>
-                                            <Text style={styles.rankNumber}>#{rank + 1}</Text>
-                                            <View style={[styles.rankingAvatar, { backgroundColor: player.avatar }]}>
-                                                <Text style={styles.rankingAvatarText}>{player.name[0].toUpperCase()}</Text>
-                                            </View>
-                                            <Text style={styles.rankingName}>{player.name}</Text>
-                                        </View>
-                                        <Text style={[
-                                            styles.rankingScore,
-                                            player.total >= 0 ? styles.positiveScore : styles.negativeScore
-                                        ]}>
-                                            {player.total >= 0 ? '+' : ''}{player.total}
-                                        </Text>
-                                    </View>
-                                ))}
-                        </View>
-                    </View>
+                    <GameSummary players={players} totals={totals} />
                 )}
 
-                {/* Rounds list */}
                 {rounds.length === 0 ? (
                     <View style={styles.emptyState}>
                         <Trophy size={48} color="#d1d5db" />
                         <Text style={styles.emptyText}>Chưa có ván nào. Bấm "Tạo ván mới" để bắt đầu!</Text>
                     </View>
                 ) : (
-                    <View style={styles.roundsList}>
-                        {rounds.map((round, idx) => (
-                            <View key={round.id} style={styles.roundCard}>
-                                <View style={styles.roundGrid}>
-                                    <Text style={styles.roundHeader}>
-                                        {idx + 1}
-                                    </Text>
-                                    {round.scores.map((score, idx) => {
-                                        if (!players[idx].name) return null;
-                                        return (
-                                            <View key={idx} style={styles.scoreCell}>
-                                                <Text style={[
-                                                    styles.scoreValue,
-                                                    score >= 0 ? styles.positiveScore : styles.negativeScore
-                                                ]}>
-                                                    {score >= 0 ? '+' : ''}{score}
-                                                </Text>
-                                            </View>
-                                        );
-                                    })}
-                                </View>
-                                {!gameEnded && (
-                                    <TouchableOpacity
-                                        onPress={() => handleDeleteRound(round.id)}
-                                        style={styles.deleteRoundButton}
-                                    >
-                                        <Trash2 size={16} color="#ef4444" />
-                                    </TouchableOpacity>
-                                )}
-                            </View>
-                        ))}
-                    </View>
+                    <RoundsList
+                        rounds={rounds}
+                        players={players}
+                        gameEnded={gameEnded}
+                        onDeleteRound={handleDeleteRound}
+                    />
                 )}
             </ScrollView>
 
@@ -282,9 +190,7 @@ const GameScreen: React.FC = () => {
                 >
                     {showScores ? <EyeOff size={20} color="#374151" /> : <Eye size={20} color="#374151" />}
                 </TouchableOpacity>
-
             </View>
-
         </View>
     );
 };
@@ -293,7 +199,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#f9fafb',
-        // opacity: 0
     },
     header: {
         backgroundColor: 'white',
@@ -304,63 +209,6 @@ const styles = StyleSheet.create({
         elevation: 2,
         zIndex: 10,
         padding: 16,
-    },
-    playersGrid: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 16,
-    },
-    playerColumn: {
-        flex: 1,
-        alignItems: 'center',
-        // maxWidth: '25%', // Removed to support dynamic player count
-    },
-    playerAvatar: {
-        width: 56,
-        height: 56,
-        borderRadius: 28,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 8,
-    },
-    playerAvatarText: {
-        color: 'white',
-        fontSize: 20,
-        fontWeight: 'bold',
-    },
-    nameRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-        marginBottom: 4,
-    },
-    playerName: {
-        fontSize: 14,
-        fontWeight: '600',
-        maxWidth: 60,
-    },
-    totalScore: {
-        fontSize: 18,
-        fontWeight: 'bold',
-    },
-    editNameContainer: {
-        alignItems: 'center',
-        gap: 4,
-        width: '100%',
-    },
-    editNameInput: {
-        width: '100%',
-        borderColor: '#22c55e',
-        borderWidth: 1,
-        borderRadius: 4,
-        padding: 4,
-        fontSize: 12,
-        textAlign: 'center',
-    },
-    saveNameButton: {
-        backgroundColor: '#22c55e',
-        padding: 4,
-        borderRadius: 4,
     },
     controls: {
         flexDirection: 'row',
@@ -414,67 +262,6 @@ const styles = StyleSheet.create({
         padding: 16,
         paddingBottom: 40,
     },
-    summaryCard: {
-        backgroundColor: '#facc15', // Yellow gradients difficult without library, using solid yellow
-        borderRadius: 16,
-        padding: 16,
-        marginBottom: 24,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-    },
-    summaryHeader: {
-        alignItems: 'center',
-        marginBottom: 16,
-    },
-    summaryTitle: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: 'white',
-        marginTop: 8,
-    },
-    rankings: {
-        gap: 8,
-    },
-    rankingRow: {
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-        padding: 16,
-        borderRadius: 8,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-    },
-    rankingLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-    },
-    rankNumber: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#9ca3af',
-    },
-    rankingAvatar: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    rankingAvatarText: {
-        color: 'white',
-        fontWeight: 'bold',
-    },
-    rankingName: {
-        fontSize: 18,
-        fontWeight: '600',
-    },
-    rankingScore: {
-        fontSize: 24,
-        fontWeight: 'bold',
-    },
     emptyState: {
         alignItems: 'center',
         paddingVertical: 48,
@@ -483,66 +270,6 @@ const styles = StyleSheet.create({
     emptyText: {
         color: '#9ca3af',
         textAlign: 'center',
-    },
-    roundsList: {
-        gap: 12,
-    },
-    roundCard: {
-        backgroundColor: 'white',
-        borderRadius: 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 1,
-        elevation: 1,
-        overflow: 'hidden',
-    },
-    roundGrid: {
-        flexDirection: 'row',
-    },
-    roundHeader: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        zIndex: 1,
-        padding: 12,
-        alignItems: 'center',
-        backgroundColor: 'white',
-    },
-    scoreCell: {
-        flex: 1,
-        padding: 16,
-        alignItems: 'center',
-        borderRightWidth: 1,
-        borderRightColor: '#f3f4f6',
-    },
-    scoreCellName: {
-        fontSize: 12,
-        color: '#4b5563',
-        marginBottom: 8,
-    },
-    scoreValue: {
-        fontSize: 24,
-        fontWeight: 'bold',
-    },
-    deleteRoundButton: {
-        position: 'absolute',
-        top: 8,
-        right: 8,
-        backgroundColor: 'white',
-        padding: 6,
-        borderRadius: 12,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 2,
-    },
-    positiveScore: {
-        color: '#16a34a',
-    },
-    negativeScore: {
-        color: '#dc2626',
     },
 });
 

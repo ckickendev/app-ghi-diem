@@ -1,8 +1,8 @@
-import React, { useContext } from 'react';
+import React, { useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Alert, Switch } from 'react-native';
-import { useGame } from '../context/GameContext';
-
+import { useGame, Player } from '../context/GameContext';
 import { Minus, Plus } from 'lucide-react-native';
+import PlayerInputRow from './Setup/PlayerInputRow';
 
 interface SetupScreenProps {
     onStart: () => void;
@@ -19,6 +19,14 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ onStart }) => {
         setIsRoundLimitEnabled
     } = useGame();
 
+    const handlePlayerNameChange = useCallback((index: number, name: string) => {
+        setPlayers((prev: Player[]) => {
+            const next = [...prev];
+            next[index] = { ...next[index], name };
+            return next;
+        });
+    }, [setPlayers]);
+
     return (
         <KeyboardAvoidingView
             style={styles.container}
@@ -32,7 +40,6 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ onStart }) => {
             >
                 <View style={styles.card}>
                     <View style={styles.header}>
-                        {/* <Text style={styles.title}>Thiết lập game</Text> */}
                         <Text style={styles.subtitle}>Số lượng người chơi: {players.length}</Text>
 
                         <View style={styles.countControl}>
@@ -84,23 +91,12 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ onStart }) => {
                     </View>
                     <View style={styles.playersList}>
                         {players.map((player, idx) => (
-                            <View key={idx} style={styles.playerRow}>
-                                <View style={[styles.avatar, { backgroundColor: player.avatar }]}>
-                                    <Text style={styles.avatarText}>
-                                        {player.name ? player.name[0].toUpperCase() : idx + 1}
-                                    </Text>
-                                </View>
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder={`Người chơi ${idx + 1}`}
-                                    value={player.name}
-                                    onChangeText={(text) => {
-                                        const newPlayers = [...players];
-                                        newPlayers[idx].name = text;
-                                        setPlayers(newPlayers);
-                                    }}
-                                />
-                            </View>
+                            <PlayerInputRow
+                                key={idx}
+                                index={idx}
+                                player={player}
+                                onChangeName={(text) => handlePlayerNameChange(idx, text)}
+                            />
                         ))}
                     </View>
 
@@ -126,7 +122,7 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ onStart }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#166534', // Green-800 equivalent
+        backgroundColor: '#166534',
     },
     scrollContent: {
         flexGrow: 1,
@@ -136,16 +132,6 @@ const styles = StyleSheet.create({
     header: {
         alignItems: 'flex-start',
         marginBottom: 32,
-    },
-    icon: {
-        fontSize: 60,
-        marginBottom: 16,
-    },
-    title: {
-        fontSize: 36,
-        fontWeight: 'bold',
-        color: '1c5b32ff',
-        marginBottom: 8,
     },
     subtitle: {
         color: '#1c5b32ff',
@@ -169,36 +155,9 @@ const styles = StyleSheet.create({
         marginBottom: 24,
         gap: 16,
     },
-    playerRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-    },
-    avatar: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    avatarText: {
-        color: 'white',
-        fontWeight: 'bold',
-        fontSize: 18,
-    },
-    input: {
-        flex: 1,
-        height: 50,
-        borderWidth: 2,
-        borderColor: '#e5e7eb',
-        borderRadius: 12,
-        paddingHorizontal: 16,
-        fontSize: 16,
-        fontWeight: '500',
-    },
     button: {
         width: '100%',
-        backgroundColor: '#16a34a', // Green-600
+        backgroundColor: '#16a34a',
         paddingVertical: 16,
         borderRadius: 12,
         alignItems: 'center',
